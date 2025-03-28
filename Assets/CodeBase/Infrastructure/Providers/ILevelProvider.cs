@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using CodeBase.Gameplay;
+using UnityEngine;
 
 namespace CodeBase.Infrastructure.Providers
 {
@@ -6,6 +7,6 @@ namespace CodeBase.Infrastructure.Providers
     {
         Transform CubeParent { get; set; }
         
-        GameObject Prefab { get; set; }
+        CubeVisualizationView CubePrefab { get; set; }
     }
 }

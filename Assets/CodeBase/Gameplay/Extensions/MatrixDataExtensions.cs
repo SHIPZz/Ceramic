@@ -29,15 +29,5 @@ namespace CodeBase.Gameplay.Extensions
 
             return matrix;
         }
-
-        public static OffsetData ToOffsetData(this Vector3 vector)
-        {
-            return new OffsetData
-            {
-                x = vector.x,
-                y = vector.y,
-                z = vector.z
-            };
-        }
     }
 }

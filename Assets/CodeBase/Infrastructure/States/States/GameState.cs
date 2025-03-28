@@ -1,5 +1,10 @@
-﻿using System.Collections.Generic;
+﻿// GameState.cs
+using System.Collections.Generic;
+using System.Linq;
 using CodeBase.Constants;
+using CodeBase.Gameplay;
+using CodeBase.Gameplay.Data;
+using CodeBase.Gameplay.Extensions;
 using CodeBase.Gameplay.Services;
 using CodeBase.Infrastructure.Providers;
 using CodeBase.Infrastructure.States.StateInfrastructure;
@@ -10,7 +15,7 @@ namespace CodeBase.Infrastructure.States.States
 {
     public class GameState : IState
     {
-        private readonly List<GameObject> _spawnedPrefabs = new();
+        private readonly List<CubeVisualizationView> _spawnedPrefabs = new();
 
         private readonly IInstantiator _instantiator;
         private readonly ILevelProvider _levelProvider;
@@ -27,33 +32,37 @@ namespace CodeBase.Infrastructure.States.States
         {
             _matrixOffsetService.LoadMatrices(FilePaths.ModelJsonPath,
                 FilePaths.SpaceJsonPath,
-                out List<Matrix4x4> modelMatrices, 
+                out List<Matrix4x4> modelMatrices,
                 out List<Matrix4x4> spaceMatrices);
-            
-            List<Vector3> foundOffsets = _matrixOffsetService.FindOffsets(modelMatrices, spaceMatrices);
+
+            List<OffsetData> foundOffsets = _matrixOffsetService.FindOffsets(modelMatrices, spaceMatrices);
             
             SpawnOffsetPrefabs(foundOffsets);
+
+            List<OffsetData> targetOffsets = foundOffsets.Where(x => x.PassesThreshold).ToList();
             
-            _matrixOffsetService.ExportOffsetsToJson(FilePaths.OutputOffsetsJsonPath, foundOffsets);
+            _matrixOffsetService.ExportOffsetsToJson(FilePaths.OutputOffsetsJsonPath, targetOffsets);
         }
 
-        private void SpawnOffsetPrefabs(List<Vector3> offsets)
+        private void SpawnOffsetPrefabs(List<OffsetData> offsets)
         {
-            GameObject cubePrefab = _levelProvider.Prefab;
+            CubeVisualizationView cubePrefab = _levelProvider.CubePrefab;
             
-            if (cubePrefab == null)
+            foreach (OffsetData offsetData in offsets)
             {
-                Debug.LogWarning("Prefab is not assigned! Cannot visualize offsets.");
-                return;
-            }
+                CubeVisualizationView createdCube = _instantiator.InstantiatePrefabForComponent<CubeVisualizationView>(
+                    cubePrefab, 
+                    offsetData.ToPosition(), 
+                    offsetData.ToQuaternion(), 
+                    _levelProvider.CubeParent
+                );
 
-            foreach (Vector3 offset in offsets)
-            {
-                GameObject newPrefab = _instantiator.InstantiatePrefab(cubePrefab, offset, Quaternion.identity, _levelProvider.CubeParent);
+                createdCube.name = offsetData.ToDebugString();
 
-                newPrefab.name = $"Offset_{offset.x:F2}_{offset.y:F2}_{offset.z:F2}";
+                if (offsetData.PassesThreshold) 
+                    createdCube.SetColor(Color.blue);
                 
-                _spawnedPrefabs.Add(newPrefab);
+                _spawnedPrefabs.Add(createdCube);
             }
 
             Debug.Log($"Spawned {offsets.Count} prefabs for visualization");

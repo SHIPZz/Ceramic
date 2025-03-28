@@ -1,8 +1,18 @@
-﻿namespace CodeBase.Gameplay.Data
+﻿using System;
+
+namespace CodeBase.Gameplay.Data
 {
-    [System.Serializable]
+    [Serializable]
     public class OffsetData
     {
-        public float x, y, z;
+        public float X;
+        public float Y;
+        public float Z;
+
+        public float XRotation;
+        public float YRotation;
+        public float ZRotation;
+
+        public bool PassesThreshold;
     }
 }

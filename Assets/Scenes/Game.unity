@@ -433,7 +433,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   <CubeParent>k__BackingField: {fileID: 1357645319}
-  <Prefab>k__BackingField: {fileID: 8793372201401281186, guid: e9c4f0204d56f004e96a71ace054114e, type: 3}
+  "<\u0421ubePrefab>k__BackingField": {fileID: 1584058496598156972, guid: e9c4f0204d56f004e96a71ace054114e, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
