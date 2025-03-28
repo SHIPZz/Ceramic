@@ -34,37 +34,35 @@ namespace CodeBase.Infrastructure.States.States
                 out List<Matrix4x4> modelMatrices,
                 out List<Matrix4x4> spaceMatrices);
 
-            List<OffsetData> foundOffsets = _matrixOffsetService.FindOffsets(modelMatrices, spaceMatrices);
+            Dictionary<OffsetData, bool> offsetThresholds = _matrixOffsetService.CalculateOffsetThresholds(modelMatrices, spaceMatrices);
             
-            SpawnOffsetPrefabs(foundOffsets);
-
-            List<OffsetData> targetOffsets = foundOffsets.Where(x => x.PassesThreshold).ToList();
+            SpawnCubePrefabs(offsetThresholds);
             
-            _matrixOffsetService.ExportOffsetsToJson(FilePaths.OutputOffsetsJsonPath, targetOffsets);
+            _matrixOffsetService.ExportOffsetsToJson(FilePaths.OutputOffsetsJsonPath, offsetThresholds);
         }
 
-        private void SpawnOffsetPrefabs(List<OffsetData> offsets)
+        private void SpawnCubePrefabs(Dictionary<OffsetData, bool> offsetThresholds)
         {
             CubeVisualizationView cubePrefab = _levelProvider.CubePrefab;
             
-            foreach (OffsetData offsetData in offsets)
+            foreach (var offsetData in offsetThresholds)
             {
                 CubeVisualizationView createdCube = _instantiator.InstantiatePrefabForComponent<CubeVisualizationView>(
                     cubePrefab, 
-                    offsetData.ToPosition(), 
-                    offsetData.ToQuaternion(), 
+                    offsetData.Key.ToPosition(), 
+                    offsetData.Key.ToQuaternion(), 
                     _levelProvider.CubeParent
                 );
 
-                createdCube.name = offsetData.ToDebugString();
+                createdCube.name = offsetData.Key.ToDebugString();
 
-                if (offsetData.PassesThreshold) 
+                if (offsetData.Value) 
                     createdCube.SetColor(Color.blue);
                 
                 _spawnedPrefabs.Add(createdCube);
             }
 
-            Debug.Log($"Spawned {offsets.Count} prefabs for visualization");
+            Debug.Log($"Spawned {offsetThresholds.Count} prefabs for visualization");
         }
 
         public void Exit()

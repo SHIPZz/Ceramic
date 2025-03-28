@@ -29,15 +29,20 @@ namespace CodeBase.Gameplay.Services
             Debug.Log($"Loaded {modelMatrices.Count} model matrices and {spaceMatrices.Count} space matrices");
         }
 
-        public void ExportOffsetsToJson(string outputPath, List<OffsetData> offsets)
+        public void ExportOffsetsToJson(string outputPath, Dictionary<OffsetData, bool> offsetThresholds)
         {
-            _fileService.SaveOffsetsToJson(outputPath, offsets);
-            Debug.Log($"Exported {offsets.Count} offsets to {outputPath}");
+            List<OffsetData> targetOffsets = offsetThresholds
+                .Where(x => x.Value)
+                .Select(x => x.Key)
+                .ToList();
+            
+            _fileService.SaveOffsetsToJson(outputPath, targetOffsets);
+            Debug.Log($"Exported {targetOffsets.Count} offsets to {outputPath}");
         }
 
-        public List<OffsetData> FindOffsets(List<Matrix4x4> modelMatrices, List<Matrix4x4> spaceMatrices)
+        public Dictionary<OffsetData, bool> CalculateOffsetThresholds(List<Matrix4x4> modelMatrices, List<Matrix4x4> spaceMatrices)
         {
-            var foundOffsets = new HashSet<OffsetData>(new OffsetDataComparer());
+            var offsetThresholds = new Dictionary<OffsetData, bool>(new OffsetDataComparer());
 
             foreach (var modelMatrix in modelMatrices)
             {
@@ -48,14 +53,15 @@ namespace CodeBase.Gameplay.Services
                     (Vector3 position, Quaternion rotation) spaceTransform = ExtractTransformFromMatrix(spaceMatrix);
                     OffsetData offsetData = CalculateOffsetData(modelTransform, spaceTransform, modelMatrix);
                     
-                    if (foundOffsets.Add(offsetData))
+                    if (!offsetThresholds.ContainsKey(offsetData))
                     {
+                        offsetThresholds[offsetData] = offsetData.PassesThreshold;
                         LogOffsetFound(offsetData);
                     }
                 }
             }
 
-            return foundOffsets.ToList();
+            return offsetThresholds;
         }
 
         private (Vector3 position, Quaternion rotation) ExtractTransformFromMatrix(Matrix4x4 matrix)
